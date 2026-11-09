@@ -1,0 +1,44 @@
+{
+    "dataset": "SIDD Small sRGB",
+    "pairs_evaluated": 1,
+    "device": "cpu",
+    "configuration": {
+        "tile_size": 256,
+        "overlap": 32,
+        "batch_size": 1
+    },
+    "results": [
+        {
+            "learned_weight": 0.7,
+            "classical_weight": 0.30000000000000004,
+            "psnr": 39.74869907493884,
+            "ssim": 0.9345348477363586,
+            "delta_e_mean": 2.123281717300415,
+            "lpips": 0.006423795595765114
+        },
+        {
+            "learned_weight": 0.85,
+            "classical_weight": 0.15000000000000002,
+            "psnr": 39.30240663195718,
+            "ssim": 0.925605297088623,
+            "delta_e_mean": 2.247453212738037,
+            "lpips": 0.007126937620341778
+        },
+        {
+            "learned_weight": 0.9,
+            "classical_weight": 0.09999999999999998,
+            "psnr": 39.10314348658683,
+            "ssim": 0.9216732978820801,
+            "delta_e_mean": 2.3087587356567383,
+            "lpips": 0.007472274824976921
+        },
+        {
+            "learned_weight": 1.0,
+            "classical_weight": 0.0,
+            "psnr": 38.64866140624049,
+            "ssim": 0.9124523997306824,
+            "delta_e_mean": 2.456928014755249,
+            "lpips": 0.008160766214132309
+        }
+    ]
+}

@@ -1,0 +1,59 @@
+{
+    "dataset": "SIDD Small sRGB",
+    "pairs_evaluated": 1,
+    "device": "cpu",
+    "model": {
+        "parameters": 3086051,
+        "checkpoint_size_mb": 35.407
+    },
+    "configuration": {
+        "tile_size": 256,
+        "overlap": 32,
+        "batch_size": 1,
+        "lpips_network": "AlexNet",
+        "lpips_evaluation_size": 512
+    },
+    "process_rss_after_evaluation_mb": 471.332,
+    "mean_metrics": {
+        "classical": {
+            "psnr": 38.15198,
+            "ssim": 0.9176,
+            "delta_e_mean": 2.78134,
+            "delta_e_median": 2.27905,
+            "delta_e_p95": 6.67263,
+            "lpips": 0.00733,
+            "latency_ms": 1153.5139,
+            "rss_change_mb": -286.33594
+        },
+        "hybrid": {
+            "psnr": 39.30241,
+            "ssim": 0.92561,
+            "delta_e_mean": 2.24745,
+            "delta_e_median": 1.91653,
+            "delta_e_p95": 4.99257,
+            "lpips": 0.00713,
+            "latency_ms": 81079.5755,
+            "rss_change_mb": -112.14453
+        },
+        "learned": {
+            "psnr": 38.64866,
+            "ssim": 0.91245,
+            "delta_e_mean": 2.45693,
+            "delta_e_median": 2.10634,
+            "delta_e_p95": 5.4231,
+            "lpips": 0.00816,
+            "latency_ms": 76865.5095,
+            "rss_change_mb": -281.69922
+        },
+        "original": {
+            "psnr": 31.3686,
+            "ssim": 0.63865,
+            "delta_e_mean": 5.25246,
+            "delta_e_median": 4.47751,
+            "delta_e_p95": 11.78358,
+            "lpips": 0.00812,
+            "latency_ms": 0.0,
+            "rss_change_mb": 0.0
+        }
+    }
+}

@@ -1,0 +1,22 @@
+
+services:
+  hybridisp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: hybridisp-app
+
+    ports:
+      - "5000:5000"
+
+    restart: unless-stopped
+
+    environment:
+      PYTHONUNBUFFERED: "1"
+      OMP_NUM_THREADS: "4"
+      MKL_NUM_THREADS: "4"
+
+    volumes:
+      - ./static/uploads:/app/static/uploads
+      - ./static/results:/app/static/results

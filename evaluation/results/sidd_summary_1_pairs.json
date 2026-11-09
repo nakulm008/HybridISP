@@ -1,0 +1,32 @@
+{
+    "dataset": "SIDD Small sRGB",
+    "pairs_evaluated": 1,
+    "device": "cpu",
+    "model_parameters": 3086051,
+    "configuration": {
+        "tile_size": 256,
+        "overlap": 32,
+        "batch_size": 1
+    },
+    "metrics": {
+        "original": {
+            "psnr": 31.368595416290546,
+            "ssim": 0.6386501789093018
+        },
+        "classical": {
+            "psnr": 38.15197912773731,
+            "ssim": 0.9175971150398254,
+            "latency_ms": 701.7414000001736
+        },
+        "learned": {
+            "psnr": 38.64866140624049,
+            "ssim": 0.9124523997306824,
+            "latency_ms": 91750.566600007
+        },
+        "hybrid": {
+            "psnr": 39.30240663195718,
+            "ssim": 0.925605297088623,
+            "latency_ms": 88633.06289998582
+        }
+    }
+}

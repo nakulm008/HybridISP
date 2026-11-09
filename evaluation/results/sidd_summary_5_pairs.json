@@ -1,0 +1,31 @@
+{
+    "dataset": "SIDD Small sRGB",
+    "execution_device": "cpu",
+    "evaluated_pairs": 5,
+    "results": {
+        "original": {
+            "image_count": 5,
+            "average_psnr_db": 32.5993,
+            "average_ssim": 0.7216,
+            "average_latency_ms": 0.0
+        },
+        "classical": {
+            "image_count": 5,
+            "average_psnr_db": 38.3973,
+            "average_ssim": 0.9387,
+            "average_latency_ms": 948.187
+        },
+        "learned": {
+            "image_count": 5,
+            "average_psnr_db": 37.7899,
+            "average_ssim": 0.9227,
+            "average_latency_ms": 81843.621
+        },
+        "hybrid": {
+            "image_count": 5,
+            "average_psnr_db": 38.5067,
+            "average_ssim": 0.9355,
+            "average_latency_ms": 76736.437
+        }
+    }
+}

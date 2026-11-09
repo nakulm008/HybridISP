@@ -1,0 +1,45 @@
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Dataset files
+data/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# IDE files
+.vscode/
+.idea/
+.ipynb_checkpoints/
+
+# Git
+.git/
+
+# Temporary files
+*.log
+*.tmp
+.DS_Store
+Thumbs.db
+
+# User uploads and generated results
+static/uploads/*
+!static/uploads/.gitkeep
+
+static/results/*
+!static/results/.gitkeep
+
+# Temporary Python testing artifacts
+.pytest_cache/
+.coverage
+htmlcov/
