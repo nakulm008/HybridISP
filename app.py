@@ -10,7 +10,7 @@ from flask import Flask, render_template, request, jsonify, url_for
 from models.model_loader import model, DEVICE
 from isp.classical_isp import classical_isp
 from isp.learned_isp import learned_isp
-from isp.hybrid_isp import hybrid_isp
+from isp.hybrid_isp import fuse_outputs
 from isp.metrics import evaluate_all_outputs
 
 
@@ -23,7 +23,7 @@ RESULT_DIR = BASE_DIR / "static" / "results"
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 RESULT_DIR.mkdir(parents=True, exist_ok=True)
 
-app.config["MAX_CONTENT_LENGTH"] = 30 * 1024 * 1024
+app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg"}
 
@@ -42,10 +42,12 @@ def load_rgb_image(file_storage):
 
 def save_rgb_image(array, path):
     array = np.clip(array, 0.0, 1.0)
+
     image = Image.fromarray(
         (array * 255).round().astype(np.uint8),
         mode="RGB"
     )
+
     image.save(path, format="PNG")
 
 
@@ -61,7 +63,9 @@ def process_image():
     reference_file = request.files.get("reference")
 
     if input_file is None or not input_file.filename:
-        return jsonify({"error": "Please select an input image."}), 400
+        return jsonify({
+            "error": "Please select an input image."
+        }), 400
 
     if not allowed_file(input_file.filename):
         return jsonify({
@@ -77,7 +81,9 @@ def process_image():
     task = request.form.get("task", "sidd").lower()
 
     if task not in {"sidd", "fivek"}:
-        return jsonify({"error": "Invalid processing profile."}), 400
+        return jsonify({
+            "error": "Invalid processing profile."
+        }), 400
 
     file_id = uuid.uuid4().hex
 
@@ -102,20 +108,41 @@ def process_image():
 
         height, width = original.shape[:2]
 
-        # Run Classical ISP
+        # Branch 1: Classical ISP
         start = time.perf_counter()
         classical = classical_isp(original)
-        classical_time = (time.perf_counter() - start) * 1000
+        classical_time = (
+            time.perf_counter() - start
+        ) * 1000
 
-        # Run Learned ISP
+        # Branch 2: Learned ISP
         start = time.perf_counter()
         learned = learned_isp(original, task=task)
-        learned_time = (time.perf_counter() - start) * 1000
+        learned_time = (
+            time.perf_counter() - start
+        ) * 1000
 
-        # Run Hybrid ISP
+        # Branch 3: Hybrid fusion
+        # Reuse the two outputs above. No repeated model inference.
         start = time.perf_counter()
-        hybrid = hybrid_isp(original, task=task)
-        hybrid_time = (time.perf_counter() - start) * 1000
+
+        hybrid = fuse_outputs(
+            original,
+            learned,
+            classical,
+            task=task,
+            learned_weight=0.15,
+            adaptive=False
+        )
+
+        fusion_time = (
+            time.perf_counter() - start
+        ) * 1000
+
+        # Total hybrid pipeline latency includes both branches and fusion.
+        hybrid_time = (
+            classical_time + learned_time + fusion_time
+        )
 
         outputs = {
             "original": original,
@@ -124,11 +151,12 @@ def process_image():
             "hybrid": hybrid
         }
 
-        # Save output images
+        # Save result images
         result_urls = {}
 
         for name, output in outputs.items():
             output_path = RESULT_DIR / f"{file_id}_{name}.png"
+
             save_rgb_image(output, output_path)
 
             result_urls[name] = url_for(
@@ -158,13 +186,14 @@ def process_image():
             "classical_latency_ms": round(classical_time, 2),
             "learned_latency_ms": round(learned_time, 2),
             "hybrid_latency_ms": round(hybrid_time, 2),
+            "fusion_latency_ms": round(fusion_time, 2),
             "model_parameters": parameters,
             "model_size_mb": round(model_size_mb, 2),
             "image_resolution": f"{width} x {height}",
             "device": str(DEVICE)
         }
 
-        # Quality evaluation only when a valid reference is provided
+        # Quality evaluation only when reference is supplied
         quality_metrics = None
 
         if reference is not None:
@@ -183,11 +212,19 @@ def process_image():
         })
 
     except (UnidentifiedImageError, OSError, ValueError) as error:
-        app.logger.exception("Image processing or evaluation error")
-        return jsonify({"error": str(error)}), 400
+        app.logger.exception(
+            "Image processing or evaluation error"
+        )
+
+        return jsonify({
+            "error": str(error)
+        }), 400
 
     except Exception as error:
-        app.logger.exception("Unexpected processing error")
+        app.logger.exception(
+            "Unexpected processing error"
+        )
+
         return jsonify({
             "error": f"Processing failed: {str(error)}"
         }), 500

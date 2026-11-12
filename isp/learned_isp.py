@@ -5,43 +5,55 @@ import torch
 from models.model_loader import model, DEVICE
 
 
+def _tile_positions(length, tile_size):
+    """
+    Create evenly distributed tile positions.
+
+    Avoids adding an unnecessary final tile immediately
+    beside an already-covered tile.
+    """
+    if length <= tile_size:
+        return [0]
+
+    count = int(np.ceil(length / tile_size))
+
+    positions = np.linspace(
+        0,
+        length - tile_size,
+        count
+    )
+
+    return sorted(set(positions.round().astype(int).tolist()))
+
+
 def learned_isp(
     image,
     task="sidd",
-    tile_size=256,
+    tile_size=384,
     overlap=32,
-    batch_size=2
+    batch_size=1
 ):
-    """
-    Apply HybridISPNet using batched overlapping tile inference.
-
-    Tasks:
-        sidd  -> task ID 0
-        fivek -> task ID 1
-
-    Defaults:
-        tile_size = 256
-        overlap = 32
-        batch_size = 2
-    """
-
     image = np.asarray(image, dtype=np.float32)
-    image = np.clip(image, 0.0, 1.0)
 
     if image.ndim != 3 or image.shape[2] != 3:
         raise ValueError("Expected an RGB image with 3 channels.")
 
+    if not np.isfinite(image).all():
+        raise ValueError("Image contains invalid values.")
+
+    image = np.clip(image, 0.0, 1.0)
+
     if not isinstance(tile_size, int) or tile_size <= 0:
-        raise ValueError("tile_size must be a positive integer.")
+        raise ValueError("tile_size must be positive.")
 
     if tile_size % 8 != 0:
         raise ValueError("tile_size must be divisible by 8.")
 
     if not isinstance(overlap, int) or overlap < 0 or overlap >= tile_size:
-        raise ValueError("overlap must be >= 0 and < tile_size.")
+        raise ValueError("Invalid overlap.")
 
     if not isinstance(batch_size, int) or batch_size < 1:
-        raise ValueError("batch_size must be a positive integer.")
+        raise ValueError("batch_size must be positive.")
 
     task_mapping = {
         "sidd": 0,
@@ -54,24 +66,9 @@ def learned_isp(
     task_value = task_mapping[task]
 
     height, width, _ = image.shape
-    stride = tile_size - overlap
 
-    # Calculate tile positions and ensure complete image coverage.
-    y_positions = list(
-        range(0, max(height - tile_size, 0) + 1, stride)
-    )
-    x_positions = list(
-        range(0, max(width - tile_size, 0) + 1, stride)
-    )
-
-    final_y = max(height - tile_size, 0)
-    final_x = max(width - tile_size, 0)
-
-    if not y_positions or y_positions[-1] != final_y:
-        y_positions.append(final_y)
-
-    if not x_positions or x_positions[-1] != final_x:
-        x_positions.append(final_x)
+    y_positions = _tile_positions(height, tile_size)
+    x_positions = _tile_positions(width, tile_size)
 
     positions = [
         (y, x)
@@ -93,7 +90,6 @@ def learned_isp(
 
     with torch.inference_mode():
 
-        # Process multiple tiles in each model call.
         for start in range(0, len(positions), batch_size):
 
             current_positions = positions[
@@ -113,7 +109,6 @@ def learned_isp(
                 patch_h, patch_w = patch.shape[:2]
                 patch_shapes.append((patch_h, patch_w))
 
-                # Pad edge tiles to the required tile dimensions.
                 pad_h = tile_size - patch_h
                 pad_w = tile_size - patch_w
 
@@ -130,15 +125,20 @@ def learned_isp(
 
                 patches.append(patch)
 
-            # NHWC -> NCHW.
             batch_array = np.stack(patches, axis=0)
+
             batch_array = np.ascontiguousarray(
                 batch_array.transpose(0, 3, 1, 2)
             )
 
-            tensor = torch.from_numpy(batch_array).to(DEVICE)
-
-            # Supply one task ID per image in the batch.
+            tensor = torch.from_numpy(batch_array).to(
+                DEVICE,
+                memory_format=(
+                    torch.channels_last
+                    if DEVICE.type == "cpu"
+                    else torch.contiguous_format
+    )
+)
             task_ids = torch.full(
                 (len(current_positions),),
                 task_value,
@@ -156,7 +156,6 @@ def learned_isp(
                 .transpose(0, 2, 3, 1)
             )
 
-            # Blend each predicted tile into the output.
             for index, (y, x) in enumerate(current_positions):
 
                 patch_h, patch_w = patch_shapes[index]
@@ -168,7 +167,6 @@ def learned_isp(
                     :
                 ]
 
-                # Non-zero Hann weights prevent uncovered borders.
                 wy = np.hanning(patch_h + 2)[1:-1]
                 wx = np.hanning(patch_w + 2)[1:-1]
 
@@ -184,4 +182,4 @@ def learned_isp(
 
     result = output_sum / np.maximum(weight_sum, 1e-8)
 
-    return np.clip(result, 0.0, 1.0)
+    return np.clip(result, 0.0, 1.0).astype(np.float32)

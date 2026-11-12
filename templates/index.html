@@ -42,7 +42,7 @@
                 <label class="upload-area" id="dropArea" for="image">
                     <div class="upload-icon">↑</div>
                     <p id="fileName">Drop input image or browse</p>
-                    <small>PNG, JPG or JPEG · Maximum 15 MB</small>
+                    <small>PNG, JPG or JPEG · Maximum 50 MB</small>
                 </label>
 
                 <input
@@ -243,7 +243,7 @@ const qualityPanel = document.getElementById("qualityPanel");
 const noReference = document.getElementById("noReference");
 
 const allowedTypes = ["image/jpeg", "image/png"];
-const MAX_SIZE = 15 * 1024 * 1024;
+const MAX_SIZE = 50 * 1024 * 1024;
 
 
 // Validate image

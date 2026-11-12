@@ -74,15 +74,12 @@ class HybridISPNet(nn.Module):
 
         c = base_channels
 
-        # Encoder
         self.enc1 = ConvBlock(3, c)
         self.enc2 = DownBlock(c, c * 2)
         self.enc3 = DownBlock(c * 2, c * 4)
 
-        # Bottleneck
         self.bottleneck = DownBlock(c * 4, c * 8)
 
-        # Dataset/task conditioning
         self.task_embedding = nn.Embedding(num_tasks, 64)
 
         self.film = nn.Sequential(
@@ -91,7 +88,6 @@ class HybridISPNet(nn.Module):
             nn.Linear(c * 16, c * 16)
         )
 
-        # Decoder
         self.up3 = UpBlock(c * 8, c * 4, c * 4)
         self.up2 = UpBlock(c * 4, c * 2, c * 2)
         self.up1 = UpBlock(c * 2, c, c)

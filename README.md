@@ -21,11 +21,11 @@ cost, image quality metrics, and model complexity.
 ## 2. System Architecture
 
 ```text
-Input RGB Image
-      |
-      v
-Image Preprocessing
-      |
+            Input RGB Image
+                 |
+                 v
+          Image Preprocessing
+                 |
       +---------------------+
       |                     |
       v                     v
